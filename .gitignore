@@ -1,0 +1,12 @@
+# Секреты
+.env
+/keys/
+
+# IDE
+.idea/
+.vscode/
+
+# Артефакты
+/bin/
+*.exe
+coverage.out

@@ -1,0 +1,34 @@
+env: "development"
+
+server:
+  shutdown_timeout: "10s"
+
+database:
+  max_conns: 20
+  connect_timeout: "10s"
+
+tokens:
+  issuer: "auth-service"
+  access_ttl: "15m"
+  refresh_ttl: "720h" # 30 дней
+  # Сколько секунд повторное предъявление уже использованного refresh-токена считается
+  # гонкой одного клиента (например, ретраем после обрыва связи), а не кражей токена
+  refresh_reuse_grace: "10s"
+
+sessions:
+  max_per_user: 10 # при превышении завершается самая давно неиспользованная сессия
+  cleanup_interval: "1h"
+
+password:
+  # Параметры argon2id по рекомендации OWASP
+  memory_kib: 19456
+  iterations: 2
+  parallelism: 1
+  min_length: 8
+
+login_protection:
+  max_failed_attempts: 5 # после этого аккаунт временно блокируется
+  lockout: "5m"
+  # Лимит запросов к /auth/* с одного IP
+  ip_rate_per_minute: 30
+  ip_burst: 10

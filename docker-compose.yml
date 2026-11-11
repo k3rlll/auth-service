@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: auth_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  auth:
+    build: .
+    container_name: auth_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - JWT_PRIVATE_KEY_PATH=/app/keys/jwt_private.pem
+    ports:
+      - "${SERVER_PORT:-8090}:8090"
+    volumes:
+      # Приватный ключ создается командой: go run ./cmd/keygen
+      - ./keys/jwt_private.pem:/app/keys/jwt_private.pem:ro
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://127.0.0.1:8090/readyz" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
